@@ -1,4 +1,4 @@
-const { Builder } = require('selenium-webdriver');
+const { Builder, By, until } = require('selenium-webdriver');
 const firefox = require('selenium-webdriver/firefox');
 const chrome = require('selenium-webdriver/chrome');
 const { promisify } = require('util');
@@ -21,11 +21,21 @@ async function openBrowserInstance(url, browser) {
         driver = await new Builder().forBrowser('chrome').setChromeOptions(chromeOptions).build();
     }
     await driver.get(url);
+
+    // Wait for the video element to be present
+    let videoElement = await driver.wait(until.elementLocated(By.css('video')), 10000);
+    
+    // Wait for 6 seconds before clicking the video
+    await sleep(6000);
+    
+    // Click the video to start playing
+    await videoElement.click();
+
     return driver;
 }
 
-// URL of the YouTube video you want to watch at 2x speed
-const youtubeVideoUrl = "https://www.youtube.com/watch?v=5EdVEghU-Xc&autoplay=1&speed=2";
+// URL of the YouTube video you want to watch
+const youtubeVideoUrl = "https://www.youtube.com/watch?v=5EdVEghU-Xc&mute=1&autoplay=1";
 
 // Function to open multiple browser instances simultaneously
 async function openMultipleBrowsers(url, count, browser) {
@@ -40,7 +50,7 @@ async function openMultipleBrowsers(url, count, browser) {
 
 // Open 200 browser instances, 4 at a time
 const totalInstances = 1;
-const batchSize = 4;
+const batchSize = 2;
 let drivers = [];
 
 (async function() {
@@ -49,7 +59,7 @@ let drivers = [];
         let firefoxDrivers = await openMultipleBrowsers(youtubeVideoUrl, batchSize, 'firefox');
         let chromeDrivers = await openMultipleBrowsers(youtubeVideoUrl, batchSize, 'chrome');
         drivers = drivers.concat(firefoxDrivers, chromeDrivers);
-        await sleep(1000); // Add a delay to avoid overwhelming the server
+        await sleep(7000); // Add a delay to avoid overwhelming the server
     }
 
     // Perform tasks here if needed
@@ -58,6 +68,9 @@ let drivers = [];
         let title = await drivers[i].getTitle();
         console.log(`Browser ${i + 1} title: ${title}`);
     }
+
+    // Wait for 30 seconds before closing the browsers
+    await sleep(30000);
 
     // Close all browsers
     for (let driver of drivers) {
